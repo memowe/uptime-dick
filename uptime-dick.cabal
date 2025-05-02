@@ -6,6 +6,9 @@ license-file:         LICENSE
 author:               Mirko Westermeier
 maintainer:           mirko@westermeier.de
 build-type:           Simple
+category:             System Tools
+synopsis:             Uptime days visualization tool
+description:          Visual indicator of the system's uptime using ASCII art
 homepage:             https://github.com/memowe/uptime-dick
 bug-reports:          https://github.com/memowe/uptime-dick/issues
 
@@ -17,7 +20,7 @@ source-repository head
 common base-warnings
   default-language:   GHC2021
   ghc-options:        -Wall
-  build-depends:      base
+  build-depends:      base >= 4.16 && < 5
 
 library
   import:             base-warnings
@@ -27,7 +30,7 @@ library
 executable ud
   import:             base-warnings
   ghc-options:        -Wno-orphans
-  build-depends:      uptime-dick, sysinfo
+  build-depends:      uptime-dick, sysinfo < 0.2
   hs-source-dirs:     .
   main-is:            App.hs
 
