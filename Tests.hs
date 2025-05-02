@@ -27,8 +27,8 @@ main = hspec $ do
         dick d `shouldEndWith` "D"
       prop "Has only balls, shaft and glans" $ \d ->
         dick d `shouldSatisfy` all (`elem` "8=D")
-      prop "No negative sizes" $ \d ->
-        d < 0 ==> length (dick d) `shouldBe` length (dick 0)
+      prop "No dicks are too small" $ \d ->
+        d < 0 ==> dick d `shouldBe` dick 0
       prop "Shouldn't be too big" $ \d ->
         d >= 0 ==> length (dick d) `shouldSatisfy` (<= d + 2)
       prop "Days define shaft length" $ \d ->
