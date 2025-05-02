@@ -11,6 +11,7 @@ synopsis:             Uptime days visualization tool
 description:          Visual indicator of the system's uptime using ASCII art
 homepage:             https://github.com/memowe/uptime-dick
 bug-reports:          https://github.com/memowe/uptime-dick/issues
+extra-doc-files:      CHANGELOG.md
 
 source-repository head
   type:               git
