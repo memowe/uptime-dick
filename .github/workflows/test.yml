@@ -1,22 +1,58 @@
-name: Haskell tests
+name: Haskell CI
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+
+  build_test_doc:
+    name: GHC ${{ matrix.ghc }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        ghc: ['9.2', '9.4', '9.6', '9.8', '9.10', '9.12']
+
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up GHC
+
+      - name: Cache cabal packages, store and dist-newstyle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cabal/packages
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal-project.freeze') }}
+          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}
+
+      - name: Set up GHC ${{ matrix.ghc }}
+        id: setup
         uses: haskell-actions/setup@v2
         with:
-          ghc-version: '9.6.7'
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: 'latest'
+          cabal-update: true
+
       - name: Install dependencies
-        run: |
-          cabal configure --enable-tests
-          cabal build --only-dependencies
+        run: cabal build --only-dependencies --enable-tests
+
       - name: Build
-        run: cabal build
+        run: cabal build --enable-tests
+
       - name: Run tests
         run: cabal test --test-show-details=streaming
+
+      - name: Build API docs
+        run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
+
+      - name: Collect generated API docs
+        run: mv $(find haddock_build -wholename '*doc/html/uptime-dick' | head -n 1) haddock_html
+
+      - name: Store generated API docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: uptime-dick API docs (GHC ${{ matrix.ghc }} on ${{ matrix.os }})
+          path: haddock_html
