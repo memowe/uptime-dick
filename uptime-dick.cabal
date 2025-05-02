@@ -1,0 +1,40 @@
+cabal-version:        3.0
+name:                 uptime-dick
+version:              0.1.0.0
+license:              MIT
+license-file:         LICENSE
+author:               Mirko Westermeier
+maintainer:           mirko@westermeier.de
+build-type:           Simple
+homepage:             https://github.com/memowe/uptime-dick
+bug-reports:          https://github.com/memowe/uptime-dick/issues
+
+source-repository head
+  type:               git
+  branch:             main
+  location:           https://github.com/memowe/uptime-dick.git
+
+common base-warnings
+  default-language:   GHC2021
+  ghc-options:        -Wall
+  build-depends:      base
+
+library
+  import:             base-warnings
+  exposed-modules:    DaysDick
+  hs-source-dirs:     lib
+
+executable ud
+  import:             base-warnings
+  ghc-options:        -Wno-orphans
+  build-depends:      uptime-dick, sysinfo
+  hs-source-dirs:     .
+  main-is:            App.hs
+
+test-suite uptime-dick-tests
+  import:             base-warnings
+  type:               exitcode-stdio-1.0
+  ghc-options:        -Wno-orphans
+  build-depends:      uptime-dick, hspec, QuickCheck
+  hs-source-dirs:     .
+  main-is:            Tests.hs

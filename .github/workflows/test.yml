@@ -1,0 +1,22 @@
+name: Haskell tests
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up GHC
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.7'
+      - name: Install dependencies
+        run: |
+          cabal configure --enable-tests
+          cabal build --only-dependencies
+      - name: Build
+        run: cabal build
+      - name: Run tests
+        run: cabal test --test-show-details=streaming
