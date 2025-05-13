@@ -31,7 +31,7 @@ Dick conversion
     ...
 ```
 
-Dry-run the executable:
+Directly run the executable:
 
 ```bash
 $ cabal run ud
@@ -45,6 +45,27 @@ $ cabal install
 $ ud
 8===========D
 ```
+
+## About
+
+This project may seem slightly over-engineered, and indeed it is. This minimalist approach, directly executable, would also suffice:
+
+```haskell
+#!/usr/bin/env cabal
+{- cabal:
+build-depends: base, sysinfo
+-}
+
+import System.SysInfo
+
+main :: IO ()
+main = do
+  uts <- either (const 42) uptime <$> sysInfo
+  let utd = fromIntegral $ uts `div` (60*60*24)
+  putStrLn $ "8" ++ replicate utd '=' ++ "D"
+```
+
+However, this project also provides a comprehensive template for a Haskell library and executable, complete with automated builds and property tests.
 
 ## Author and License
 
