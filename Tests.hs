@@ -4,6 +4,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
 import DaysDick
+import System.SysInfo
 
 instance HasDays Days where days = id
 
@@ -34,6 +35,19 @@ main = hspec $ do
       prop "Days define shaft length" $ \d ->
         d >= 0 ==> length (filter (== '=') $ dick d) `shouldBe` d
 
-    prop "Month's dick is the dick of its days" $ \month -> do
-      let m = month :: Month
-      toDick m `shouldBe` dick (days m)
+    describe "Different HasDays instances" $ do
+      prop "Month's dick is the dick of its days" $ \month -> do
+        let m = month :: Month
+        toDick m `shouldBe` dick (days m)
+      prop "System info's uptime in days as dick size" $ \d ->
+        forAll (genSysInfo d) $ \sinfo ->
+          toDick sinfo `shouldBe` dick d
+
+genSysInfo :: Days -> Gen SysInfo
+genSysInfo d = SysInfo (fromIntegral (d * 24 * 60 * 60))
+  <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary Loads where
+  arbitrary = Loads <$> arbitrary
