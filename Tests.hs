@@ -34,6 +34,6 @@ main = hspec $ do
       prop "Days define shaft length" $ \d ->
         d >= 0 ==> length (filter (== '=') $ dick d) `shouldBe` d
 
-    prop "Month's dick's size is the dick size of its days" $ \month -> do
+    prop "Month's dick is the dick of its days" $ \month -> do
       let m = month :: Month
-      length (toDick m) `shouldBe` length (dick $ days m)
+      toDick m `shouldBe` dick (days m)
