@@ -2,6 +2,10 @@ name: Haskell CI
 
 on: [push, pull_request, workflow_dispatch]
 
+env:
+  HADDOCK_DIR: haddock_build
+  HADDOCK_HTML: haddock_html
+
 jobs:
 
   build_test_doc:
@@ -46,13 +50,34 @@ jobs:
         run: cabal test --test-show-details=streaming
 
       - name: Build API docs
-        run: cabal haddock --builddir=haddock_build --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
+        run: cabal haddock --builddir=$HADDOCK_BUILD --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
 
       - name: Collect generated API docs
-        run: mv $(find haddock_build -wholename '*doc/html/uptime-dick' | head -n 1) haddock_html
+        run: mv $(find $HADDOCK_BUILD -wholename '*doc/html/uptime-dick' | head -n 1) $HADDOCK_HTML
 
       - name: Store generated API docs
         uses: actions/upload-artifact@v4
         with:
           name: uptime-dick API docs (GHC ${{ matrix.ghc }} on ${{ matrix.os }})
-          path: haddock_html
+          path: ${{ env.HADDOCK_HTML }}
+
+      - name: Upload generated API docs for pages
+        if: matrix.ghc == '9.6'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.HADDOCK_HTML }}
+
+  deploy:
+    needs: build_test_doc
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to pages
+        id: deployment
+        uses: actions/deploy-pages@v4
