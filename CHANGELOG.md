@@ -1,5 +1,9 @@
 # Revision history for uptime-dick
 
+## TODO
+
+* Simplified API docs
+
 ## 0.1.0.1 -- 2025-05-15
 
 * Improved test suite
