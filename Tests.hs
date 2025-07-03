@@ -45,9 +45,7 @@ main = hspec $ do
 
 genSysInfo :: Days -> Gen SysInfo
 genSysInfo d = SysInfo (fromIntegral (d * 24 * 60 * 60))
-  <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-  <*> arbitrary <*> arbitrary <*> arbitrary
-
-instance Arbitrary Loads where
-  arbitrary = Loads <$> arbitrary
+  <$> arbitraryLoads
+  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+  where arbitraryLoads = Loads <$> arbitrary
