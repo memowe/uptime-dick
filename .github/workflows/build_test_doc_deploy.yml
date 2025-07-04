@@ -45,20 +45,27 @@ jobs:
 
       - name: Build
         run: cabal build --enable-tests
+ 
+      - name: Check executable file name
+        id: prepare_executable
+        run: echo "BIN=$(cabal list-bin ud)" >> $GITHUB_OUTPUT
 
       - name: Run tests
         run: cabal test --test-show-details=streaming
 
       - name: Build API docs
+        if: matrix.ghc == '9.6'
         run: cabal haddock --builddir=$HADDOCK_BUILD --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
 
       - name: Collect generated API docs
+        if: matrix.ghc == '9.6'
         run: mv $(find $HADDOCK_BUILD -wholename '*doc/html/uptime-dick' | head -n 1) $HADDOCK_HTML
 
       - name: Store generated API docs
+        if: matrix.ghc == '9.6'
         uses: actions/upload-artifact@v4
         with:
-          name: uptime-dick API docs (GHC ${{ matrix.ghc }} on ${{ matrix.os }})
+          name: uptime-dick API docs
           path: ${{ env.HADDOCK_HTML }}
 
       - name: Upload generated API docs for pages
@@ -67,7 +74,14 @@ jobs:
         with:
           path: ${{ env.HADDOCK_HTML }}
 
-  deploy:
+      - name: Store executable
+        if: matrix.ghc == '9.6'
+        uses: actions/upload-artifact@v4
+        with:
+          name: executable
+          path: ${{ steps.prepare_executable.outputs.BIN }}
+ 
+  deploy_api_docs:
     needs: build_test_doc
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -81,3 +95,45 @@ jobs:
       - name: Deploy to pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  check_version_tag:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.check.outputs.valid }}
+    steps:
+      - name: Check if ref looks like a version name tag
+        id: check
+        run: |
+          if [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+          fi
+
+  release_from_version_tag:
+    needs: [check_version_tag, build_test_doc]
+    if: needs.check_version_tag.outputs.valid == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Extract release changes
+        id: extract_changes
+        run: |
+          TAG=${{ github.ref_name }}
+          CHANGES=$(perl extract_changes.pl CHANGELOG.md $TAG)
+          echo "CHANGES<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Load executable
+        uses: actions/download-artifact@v4
+        with:
+          name: executable
+      - name: Release with executable and changes
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.extract_changes.outputs.CHANGES }}
+          files: ud
+          token: ${{ secrets.RELEASE_TOKEN }}
+          make_latest: true
