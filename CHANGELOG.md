@@ -1,6 +1,6 @@
 # Revision history for uptime-dick
 
-## TODO
+## 0.1.0.2 -- 2025-07-04
 
 * Simplified API docs
 
