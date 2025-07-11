@@ -122,7 +122,7 @@ jobs:
         id: extract_changes
         run: |
           TAG=${{ github.ref_name }}
-          CHANGES=$(perl extract_changes.pl CHANGELOG.md $TAG)
+          CHANGES="$(perl -nle '($v = "'"$TAG"'") =~ s/^v//; print if /^## $v / ... /^## / and not /^##/' CHANGELOG.md)"
           echo "CHANGES<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
