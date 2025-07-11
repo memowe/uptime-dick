@@ -22,7 +22,7 @@ class HasDays a where
 
 -- | Extracting days from a 'SysInfo' gives days of 'uptime'.
 instance HasDays SysInfo where
-  days = (`div` (60*60*24)) . fromIntegral . uptime
+  days si = fromIntegral (uptime si) `div` (60*60*24)
 
 -- | >>> toDick week
 -- 8=======D
