@@ -1,6 +1,6 @@
 # Revision history for uptime-dick
 
-## 0.1.0.2 -- 2025-07-10
+## 0.1.0.2 -- 2025-07-11
 
 * Simplified API docs
 * Improved release mechanism with executable download

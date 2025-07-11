@@ -1,6 +1,6 @@
 cabal-version:        3.0
 name:                 uptime-dick
-version:              0.1.0.1
+version:              0.1.0.2
 license:              MIT
 license-file:         LICENSE
 author:               Mirko Westermeier
