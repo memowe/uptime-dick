@@ -45,7 +45,7 @@ jobs:
 
       - name: Build
         run: cabal build --enable-tests
- 
+
       - name: Check executable file name
         id: prepare_executable
         run: echo "BIN=$(cabal list-bin ud)" >> $GITHUB_OUTPUT
@@ -80,7 +80,7 @@ jobs:
         with:
           name: executable
           path: ${{ steps.prepare_executable.outputs.BIN }}
- 
+
   deploy_api_docs:
     needs: build_test_doc
     if: github.ref == 'refs/heads/main'
