@@ -9,79 +9,89 @@ env:
 jobs:
 
   build_test_doc:
-    name: GHC ${{ matrix.ghc }} on ${{ matrix.os }}
+    name: Test & Doc (GHC ${{ matrix.ghc }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         ghc: ['9.2', '9.4', '9.6', '9.8', '9.10', '9.12']
+        include:
+          - os: windows-latest
+            ghc: '9.6'
+          - os: macos-latest
+            ghc: '9.6'
 
     steps:
 
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache cabal packages, store and dist-newstyle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cabal/packages
-            ~/.cabal/store
-            dist-newstyle
-          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal-project.freeze') }}
-          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}
-
       - name: Set up GHC ${{ matrix.ghc }}
         id: setup
         uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc }}
-          cabal-version: 'latest'
-          cabal-update: true
+
+      - name: Configure the build
+        # generates dist/newstyle/cache/plan.json
+        run: |
+          cabal configure --enable-tests --enable-benchmarks
+          cabal build all --dry-run
+
+      - name: Configure cache
+        uses: actions/cache@v4
+        env:
+          key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ steps.setup.outputs.cabal-version }}
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: ${{ env.key }}-plan-${{ hashFiles('**/plan.json') }}
+          restore-keys: ${{ env.key }}-plan-
 
       - name: Install dependencies
-        run: cabal build --only-dependencies --enable-tests
+        run: cabal build --only-dependencies all
 
       - name: Build
-        run: cabal build --enable-tests
+        run: cabal build all
 
       - name: Check executable file name
         id: prepare_executable
+        if: matrix.os == 'ubuntu-latest' && matrix.ghc == '9.6'
         run: echo "BIN=$(cabal list-bin ud)" >> $GITHUB_OUTPUT
 
       - name: Run tests
         run: cabal test --test-show-details=streaming
 
       - name: Build API docs
-        if: matrix.ghc == '9.6'
+        if: matrix.os == 'ubuntu-latest' && matrix.ghc == '9.6'
         run: cabal haddock --builddir=$HADDOCK_DIR --haddock-hyperlinked-source --haddock-html-location='https://hackage.haskell.org/package/$pkg-$version/docs'
 
       - name: Collect generated API docs
-        if: matrix.ghc == '9.6'
+        if: matrix.os == 'ubuntu-latest' && matrix.ghc == '9.6'
         run: mv $(find $HADDOCK_DIR -wholename '*doc/html/uptime-dick' | head -n 1) $HADDOCK_HTML
 
       - name: Store generated API docs
-        if: matrix.ghc == '9.6'
+        if: matrix.os == 'ubuntu-latest' && matrix.ghc == '9.6'
         uses: actions/upload-artifact@v4
         with:
           name: uptime-dick API docs
           path: ${{ env.HADDOCK_HTML }}
 
       - name: Upload generated API docs for pages
-        if: matrix.ghc == '9.6'
+        if: matrix.os == 'ubuntu-latest' && matrix.ghc == '9.6'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.HADDOCK_HTML }}
 
       - name: Store executable
-        if: matrix.ghc == '9.6'
+        if: matrix.os == 'ubuntu-latest' && matrix.ghc == '9.6'
         uses: actions/upload-artifact@v4
         with:
           name: executable
           path: ${{ steps.prepare_executable.outputs.BIN }}
 
   deploy_api_docs:
+    name: Deploy API Docs
     needs: build_test_doc
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -97,6 +107,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   check_version_tag:
+    name: Check if version tag
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     outputs:
@@ -112,6 +123,7 @@ jobs:
           fi
 
   release_from_version_tag:
+    name: Release from version tag
     needs: [check_version_tag, build_test_doc]
     if: needs.check_version_tag.outputs.valid == 'true'
     runs-on: ubuntu-latest
